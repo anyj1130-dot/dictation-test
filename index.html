@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>받아쓰기 앱 시험판</title>
+<style>
+  :root{
+    --bg:#fbf8f1; --card:#ffffff; --ink:#2b2622; --muted:#6f665d; --line:#e7dfd2;
+    --brand:#b5462f; --brand-ink:#fff; --ok:#1f7a4d; --ok-bg:#e3f4ea; --bad:#b3261e; --bad-bg:#fbe6e4;
+    --wait:#8a6d1f; --wait-bg:#fbf1d6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;line-height:1.55;-webkit-text-size-adjust:100%}
+  main{max-width:760px;margin:0 auto;padding:24px 16px 60px}
+  h1{font-size:1.6rem;margin:4px 0 4px}
+  .sub{color:var(--muted);margin:0 0 20px}
+  .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px}
+  .pill{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 8px;text-align:center;font-size:.9rem}
+  .pill b{display:block;font-size:1.3rem;line-height:1.4}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px}
+  .card h2{font-size:1.15rem;margin:0 0 6px;display:flex;align-items:center;gap:8px}
+  .num{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--brand);color:var(--brand-ink);font-size:.95rem}
+  .card p{margin:6px 0}
+  .muted{color:var(--muted);font-size:.93rem}
+  button{font:inherit;font-size:1.05rem;border:0;border-radius:12px;padding:14px 18px;min-height:52px;cursor:pointer;background:var(--brand);color:var(--brand-ink);touch-action:manipulation}
+  button.ghost{background:#efe8dc;color:var(--ink)}
+  button:disabled{opacity:.5}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  input[type=text]{font:inherit;font-size:1.3rem;width:100%;padding:14px;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
+  input[type=text]:focus{outline:none;border-color:var(--brand)}
+  .status{margin-top:12px;padding:12px 14px;border-radius:12px;font-weight:600;display:none}
+  .status.ok{display:block;background:var(--ok-bg);color:var(--ok)}
+  .status.bad{display:block;background:var(--bad-bg);color:var(--bad)}
+  .status.wait{display:block;background:var(--wait-bg);color:var(--wait)}
+  .target{font-size:1.5rem;font-weight:700;letter-spacing:.05em;background:#fff7e6;border:1px dashed #e0c68a;border-radius:12px;padding:10px 14px;display:inline-block;margin:6px 0}
+  details{margin-top:10px} summary{cursor:pointer;color:var(--muted)}
+  code{background:#f2ece2;padding:1px 6px;border-radius:6px;word-break:break-all}
+  @media (max-width:520px){.summary{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<main>
+  <h1>받아쓰기 앱 시험판</h1>
+  <p class="sub">갤럭시탭에서 네 가지를 차례로 확인해요. 모두 초록색이 되면 본 앱을 만들 준비가 끝난 거예요.</p>
+
+  <div class="summary">
+    <div class="pill">화면 열기<b id="s1">⏳</b></div>
+    <div class="pill">음성 재생<b id="s2">⏳</b></div>
+    <div class="pill">키보드<b id="s3">⏳</b></div>
+    <div class="pill">기록 저장<b id="s4">⏳</b></div>
+  </div>
+
+  <section class="card">
+    <h2><span class="num">1</span>화면 열기</h2>
+    <p id="openMsg"></p>
+    <p class="muted" id="uaMsg"></p>
+  </section>
+
+  <section class="card">
+    <h2><span class="num">2</span>음성 재생</h2>
+    <p>버튼을 누르면 ‘딩동’ 소리가 나요. 태블릿 소리를 켜고 눌러 보세요.</p>
+    <div class="row"><button id="playBtn">🔊 소리 재생</button></div>
+    <div class="row" id="heardRow" style="display:none">
+      <button class="ghost" data-heard="yes">들렸어요</button>
+      <button class="ghost" data-heard="no">안 들렸어요</button>
+    </div>
+    <div class="status" id="audioStatus"></div>
+    <details>
+      <summary>참고: 이 기기의 음성 합성(TTS) 상태</summary>
+      <p class="muted" id="ttsInfo">확인 중…</p>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2><span class="num">3</span>키보드 자동 수정 확인</h2>
+    <p>아래 글자를 <b>일부러 틀린 그대로</b> 써 보세요.</p>
+    <div class="target">마시딴다 껍대기</div>
+    <input type="text" id="kbInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="여기에 입력" lang="ko">
+    <div class="row"><button id="kbBtn">확인</button></div>
+    <div class="status" id="kbStatus"></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="num">4</span>기록 저장</h2>
+    <p>태블릿 이름(예: 3번 태블릿)을 쓰고 저장해 보세요. 구글 시트 ‘테스트기록’에 한 줄이 생기면 성공이에요.</p>
+    <input type="text" id="nameInput" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="태블릿 이름">
+    <div class="row">
+      <button id="saveBtn">💾 시트에 저장</button>
+      <button class="ghost" id="loadBtn">📥 시트에서 불러오기</button>
+    </div>
+    <div class="status" id="saveStatus"></div>
+  </section>
+
+  <p class="muted">결과 화면을 캡처해서 보내 주시면 다음 단계를 진행할게요.</p>
+</main>
+
+<script src="config.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const result = { audio: '', keyboard: '', typed: '' };
+
+function setStatus(el, kind, msg){ el.className = 'status ' + kind; el.textContent = msg; }
+function setPill(id, ok){ $(id).textContent = ok === true ? '✅' : ok === false ? '❌' : '⏳'; }
+
+/* 1. 화면 열기 + 브라우저 확인 */
+const ua = navigator.userAgent;
+function browserName(){
+  if (/KAKAOTALK/i.test(ua)) return '카카오톡 안의 브라우저';
+  if (/NAVER\(inapp/i.test(ua)) return '네이버 앱 안의 브라우저';
+  if (/Instagram|FBAN|FBAV|Line\//i.test(ua)) return '다른 앱 안의 브라우저';
+  if (/SamsungBrowser/i.test(ua)) return '삼성 인터넷';
+  if (/; wv\)/.test(ua)) return '앱 안의 브라우저(웹뷰)';
+  if (/EdgA|Edg\//.test(ua)) return '엣지';
+  if (/Chrome\//.test(ua)) return '크롬';
+  if (/Safari\//.test(ua)) return '사파리';
+  return '알 수 없는 브라우저';
+}
+const bname = browserName();
+result.browser = bname;
+const inApp = /안의 브라우저|웹뷰/.test(bname);
+$('openMsg').textContent = inApp
+  ? '⚠️ 화면은 열렸지만 다른 앱 안에서 열려 있어요. 오른쪽 위 메뉴에서 “다른 브라우저로 열기”(삼성 인터넷이나 크롬)를 눌러 주세요.'
+  : '✅ 화면이 잘 열렸어요. 구글 로그인 없이 들어왔어요.';
+$('uaMsg').textContent = '지금 브라우저: ' + bname;
+setPill('s1', !inApp);
+
+/* 2. 음성 재생 (mp3 파일) */
+const audio = new Audio('audio/test.mp3');
+audio.preload = 'auto';
+$('playBtn').addEventListener('click', async () => {
+  try {
+    audio.currentTime = 0;
+    await audio.play();
+    setStatus($('audioStatus'), 'wait', '소리가 들렸나요? 아래에서 골라 주세요.');
+    $('heardRow').style.display = 'flex';
+  } catch (err) {
+    result.audio = '재생 오류: ' + err.name;
+    setStatus($('audioStatus'), 'bad', '재생하지 못했어요 (' + err.name + '). 태블릿 소리와 방해 금지 모드를 확인해 주세요.');
+    setPill('s2', false);
+  }
+});
+document.querySelectorAll('[data-heard]').forEach(b => b.addEventListener('click', () => {
+  const yes = b.dataset.heard === 'yes';
+  result.audio = yes ? '들림' : '안 들림';
+  setStatus($('audioStatus'), yes ? 'ok' : 'bad', yes ? '음성 재생 성공!' : '재생은 됐는데 소리가 안 들렸어요. 음량과 블루투스 연결을 확인해 주세요.');
+  setPill('s2', yes);
+}));
+
+// 참고용: 기기 TTS 한국어 음성 유무
+function ttsCheck(){
+  if (!('speechSynthesis' in window)) { $('ttsInfo').textContent = '이 브라우저는 음성 합성을 지원하지 않아요. (그래서 본 앱은 mp3 파일로 재생해요.)'; return; }
+  const ko = speechSynthesis.getVoices().filter(v => /^ko/i.test(v.lang));
+  $('ttsInfo').textContent = ko.length
+    ? '한국어 음성 ' + ko.length + '개가 있어요: ' + ko.map(v => v.name).join(', ') + ' — 기기마다 달라서 본 앱은 mp3 파일을 써요.'
+    : '한국어 음성이 없어요. 지난번 앱에서 소리가 안 났던 이유일 수 있어요. 본 앱은 mp3 파일로 재생해요.';
+}
+if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = ttsCheck;
+setTimeout(ttsCheck, 800);
+
+/* 3. 키보드 자동 수정 */
+$('kbBtn').addEventListener('click', () => {
+  const typed = $('kbInput').value.trim();
+  result.typed = typed;
+  const norm = typed.replace(/\s+/g, ' ');
+  if (!typed) { setStatus($('kbStatus'), 'wait', '먼저 글자를 입력해 주세요.'); return; }
+  if (norm === '마시딴다 껍대기') {
+    result.keyboard = '문제없음';
+    setStatus($('kbStatus'), 'ok', '틀린 글자 그대로 입력됐어요. 키보드가 고치지 않았어요!');
+    setPill('s3', true);
+  } else {
+    result.keyboard = '바뀜';
+    setStatus($('kbStatus'), 'bad', '입력된 글자: “' + typed + '” — 키보드가 글자를 바꿨거나 다르게 입력됐어요. 삼성 키보드 설정에서 ‘예측 텍스트’와 ‘자동 맞춤법 검사’를 끄고 다시 해 보세요.');
+    setPill('s3', false);
+  }
+});
+
+/* 4. 기록 저장 / 불러오기 */
+const apiReady = typeof API_URL === 'string' && /^https:\/\/script\.google\.com\//.test(API_URL);
+if (!apiReady) {
+  setStatus($('saveStatus'), 'wait', 'config.js에 앱스크립트 주소가 아직 없어요. 설치 안내 3단계를 확인해 주세요.');
+}
+$('saveBtn').addEventListener('click', async () => {
+  if (!apiReady) return;
+  const name = $('nameInput').value.trim();
+  if (!name) { setStatus($('saveStatus'), 'wait', '태블릿 이름을 먼저 써 주세요.'); return; }
+  $('saveBtn').disabled = true;
+  setStatus($('saveStatus'), 'wait', '저장 중…');
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ name, browser: bname, audio: result.audio, keyboard: result.keyboard, typed: result.typed, note: ua.slice(0, 180) })
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || '저장 실패');
+    setStatus($('saveStatus'), 'ok', '저장 성공! 시트 ' + data.row + '번째 기록이에요. ‘불러오기’도 눌러 보세요.');
+    setPill('s4', true);
+  } catch (err) {
+    setStatus($('saveStatus'), 'bad', '저장하지 못했어요: ' + err.message + ' — 인터넷 연결과 앱스크립트 배포 설정(액세스: 모든 사용자)을 확인해 주세요.');
+    setPill('s4', false);
+  } finally { $('saveBtn').disabled = false; }
+});
+$('loadBtn').addEventListener('click', async () => {
+  if (!apiReady) return;
+  setStatus($('saveStatus'), 'wait', '불러오는 중…');
+  try {
+    const data = await (await fetch(API_URL)).json();
+    const last = data.last ? ' 마지막 기록: ' + data.last.name + ' (' + data.last.time + ')' : '';
+    setStatus($('saveStatus'), 'ok', '불러오기 성공! 지금까지 기록 ' + data.count + '개.' + last);
+  } catch (err) {
+    setStatus($('saveStatus'), 'bad', '불러오지 못했어요: ' + err.message);
+  }
+});
+</script>
+</body>
+</html>
